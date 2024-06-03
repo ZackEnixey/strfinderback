@@ -3,11 +3,12 @@ const cors = require("cors");
 require("dotenv").config();
 const mongoose = require("mongoose");
 const userRoutes = require("./routes/users");
+const strengthRoutes = require("./routes/strengths");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(userRoutes);
+app.use(strengthRoutes, userRoutes);
 
 const PORT = process.env.PORT;
 const MONGODB_URI = process.env.DATABASE_URL;
