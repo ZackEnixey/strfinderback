@@ -1,31 +1,34 @@
 const UserModel = require("../models/UserModel");
+const bcrypt = require("bcrypt");
 
 // Create a new user
 const createUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    // Check if user with provided email exists in the database
+    const { name, email, password, isActive, role, gameCodes } = req.body;
+    // Check if the email already exists
     const existingUser = await UserModel.findOne({ email });
-    console.log(existingUser);
-    // Check if the provided password matches the stored password hash
     if (existingUser) {
-      const isPasswordValid = existingUser.password === password;
-      if (isPasswordValid) {
-        res.status(200).json({
-          success: true,
-          message: "User Found",
-          data: existingUser,
-        });
-      }
-    } else {
-      const user = new UserModel(req.body);
-      await user.save();
-      res.status(201).json({
-        success: true,
-        message: "User registered successfully",
-        data: user,
+      return res.status(400).json({
+        success: false,
+        message: "Email already exists",
       });
     }
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    // Create a new student with hashed password
+    const newUser = await UserModel.create({
+      name,
+      email,
+      password: hashedPassword,
+      isActive,
+      role,
+      gameCodes,
+    });
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      data: newUser,
+    });
   } catch (error) {
     if (error.name === "ValidationError") {
       const messages = Object.values(error.errors).map((err) => err.message);
@@ -61,14 +64,31 @@ const getUserById = async (req, res) => {
 // Update a user by ID
 const updateUserById = async (req, res) => {
   try {
-    const user = await UserModel.findByIdAndUpdate(req.params.id, req.body, {
+    // Check if the email field is present in the request body
+    if (req.body.email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email cannot be updated",
+      });
+    }
+    // Extract the email from the request body and remove it
+    const { email, ...updateData } = req.body;
+    const user = await UserModel.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true,
     });
+
     if (!user) {
-      res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
-    res.send(user);
+
+    res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      data: user,
+    });
   } catch (error) {
     if (error.name === "ValidationError") {
       const messages = Object.values(error.errors).map((err) => err.message);

@@ -28,25 +28,29 @@ const addStrengthCard = async (req, res) => {
   }
 };
 
-const getCliftonStrengths = async (req, res) => {
+const getStrengths = async (req, res) => {
   try {
-    const cliftonStrengths = await StrengthCardModel.find({ type: "CLIFTON" });
-    res.json({
-      success: true,
-      data: cliftonStrengths,
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-const getGallupStrengths = async (req, res) => {
-  try {
-    const gallupStrengths = await StrengthCardModel.find({ type: "GALLUP" });
-    res.json({
-      success: true,
-      data: gallupStrengths,
-    });
+    if (!req.body.type) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Type is required in the body" });
+    }
+    const type = req.body.type;
+    if (type === "CLIFTON") {
+      const cliftonStrengths = await StrengthCardModel.find({
+        type: "CLIFTON",
+      });
+      res.json({
+        success: true,
+        data: cliftonStrengths,
+      });
+    } else if (type === "GALLUP") {
+      const gallupStrengths = await StrengthCardModel.find({ type: "GALLUP" });
+      res.json({
+        success: true,
+        data: gallupStrengths,
+      });
+    }
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -54,6 +58,5 @@ const getGallupStrengths = async (req, res) => {
 
 module.exports = {
   addStrengthCard,
-  getCliftonStrengths,
-  getGallupStrengths,
+  getStrengths,
 };
