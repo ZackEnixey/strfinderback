@@ -9,7 +9,7 @@ const authMiddleware = (req, res, next) => {
       .json({ success: false, message: "Authorization header missing" });
   }
 
-  const token = authHeader.split(" ")[1]; // Assuming the token is in the format "Bearer <token>"
+  const token = authHeader.split(" ")[1];
 
   if (!token) {
     return res.status(401).json({ success: false, message: "Token missing" });
@@ -17,8 +17,8 @@ const authMiddleware = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // Attach the decoded token to the request object
-    next(); // Proceed to the next middleware or route handler
+    req.user = decoded;
+    next();
   } catch (error) {
     return res.status(401).json({ success: false, message: "Invalid token" });
   }

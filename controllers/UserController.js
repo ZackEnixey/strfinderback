@@ -118,6 +118,35 @@ const deleteUserById = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+// Function to delete a game code from the array
+const deleteGameCode = async (req, res) => {
+  const { userId, gameCode } = req.body;
+
+  try {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    const gameCodeIndex = user.gameCodes.indexOf(gameCode);
+    if (gameCodeIndex === -1) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Game code not found" });
+    }
+
+    user.gameCodes.splice(gameCodeIndex, 1); // Remove the game code from the array
+    await user.save(); // Save the updated user document
+
+    res
+      .status(200)
+      .json({ success: true, message: "Game code deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 module.exports = {
   createUser,
@@ -125,4 +154,5 @@ module.exports = {
   getUserById,
   updateUserById,
   deleteUserById,
+  deleteGameCode,
 };
