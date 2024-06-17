@@ -1,15 +1,15 @@
 const StrengthCardModel = require("../models/StrengthCardModel");
+const UserModel = require("../models/UserModel");
 
 const addStrengthCard = async (req, res) => {
   try {
-    const { description, language, title, type } = req.body;
-    const createdByEmail = "email"; // storing user email in the request object
-    console.log(createdByEmail);
+    const { description, language, title,additionalText, type, email } = req.body;
     const strengthCard = await StrengthCardModel.create({
       description,
       language,
       title,
-      createdByEmail,
+      createdByEmail: email,
+      additionalText,
       type,
     });
     res.status(201).json({
@@ -30,27 +30,50 @@ const addStrengthCard = async (req, res) => {
 
 const getStrengths = async (req, res) => {
   try {
-    if (!req.body.type) {
+    const userId = req.params.id;
+    console.log(userId);
+    if (!req.query.type) {
       return res
         .status(400)
-        .json({ success: false, message: "Type is required in the body" });
+        .json({ success: false, message: "Type is required in the params" });
     }
-    const type = req.body.type;
+    const type = req.query.type.toUpperCase();
+
+    // Fetch the user email by user ID
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+    const userEmail = user.email;
+
+    // Fetch strengths
+    let strengths = [];
     if (type === "CLIFTON") {
       const cliftonStrengths = await StrengthCardModel.find({
         type: "CLIFTON",
       });
-      res.json({
-        success: true,
-        data: cliftonStrengths,
-      });
+      strengths = cliftonStrengths;
     } else if (type === "GALLUP") {
       const gallupStrengths = await StrengthCardModel.find({ type: "GALLUP" });
-      res.json({
-        success: true,
-        data: gallupStrengths,
-      });
+      strengths = gallupStrengths;
+    } else {
+      return res
+        .status(400)
+        .json({ success: false, message: "Type not found" });
     }
+
+    // Fetch custom strengths created by the user
+    const customStrengths = await StrengthCardModel.find({
+      createdByEmail: userEmail,
+    });
+    strengths = strengths.concat(customStrengths);
+
+    res.json({
+      success: true,
+      data: strengths,
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
