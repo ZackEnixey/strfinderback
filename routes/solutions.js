@@ -1,18 +1,18 @@
 const express = require("express");
-const strengthCardController = require("../controllers/StrengthCardController");
+const solutionCardController = require("../controllers/SolutionCardController");
 const authMiddleware = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 
 router.post(
-  "/strength-cards",
+  "/solution-cards",
   authMiddleware,
-  strengthCardController.addStrengthCard
+  solutionCardController.addSolutionCard
 );
 router.get(
-  "/strength-cards/:id",
+  "/solution-cards/:id",
   authMiddleware,
-  strengthCardController.getStrengths
+  solutionCardController.getSolutions
 );
 
 module.exports = router;

@@ -17,6 +17,10 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     required: true,
   },
+  role: {
+    type: String,
+    default: "User",
+  },
   gameCodes: {
     type: [String], // Array of strings
     default: [], // Default value as an empty array
