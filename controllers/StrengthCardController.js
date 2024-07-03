@@ -3,7 +3,15 @@ const UserModel = require("../models/UserModel");
 
 const addStrengthCard = async (req, res) => {
   try {
-    const { description, language, title,additionalText, type, email } = req.body;
+    const {
+      description,
+      language,
+      title,
+      additionalText,
+      type,
+      email,
+      custom,
+    } = req.body;
     const strengthCard = await StrengthCardModel.create({
       description,
       language,
@@ -11,6 +19,7 @@ const addStrengthCard = async (req, res) => {
       createdByEmail: email,
       additionalText,
       type,
+      custom,
     });
     res.status(201).json({
       success: true,
@@ -31,13 +40,18 @@ const addStrengthCard = async (req, res) => {
 const getStrengths = async (req, res) => {
   try {
     const userId = req.params.id;
-    console.log(userId);
     if (!req.query.type) {
       return res
         .status(400)
         .json({ success: false, message: "Type is required in the params" });
     }
     const type = req.query.type.toUpperCase();
+
+    // Validate the type
+    const validTypes = ["CLIFTON", "GALLUP"];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ success: false, message: "Invalid type" });
+    }
 
     // Fetch the user email by user ID
     const user = await UserModel.findById(userId);
@@ -48,27 +62,10 @@ const getStrengths = async (req, res) => {
     }
     const userEmail = user.email;
 
-    // Fetch strengths
-    let strengths = [];
-    if (type === "CLIFTON") {
-      const cliftonStrengths = await StrengthCardModel.find({
-        type: "CLIFTON",
-      });
-      strengths = cliftonStrengths;
-    } else if (type === "GALLUP") {
-      const gallupStrengths = await StrengthCardModel.find({ type: "GALLUP" });
-      strengths = gallupStrengths;
-    } else {
-      return res
-        .status(400)
-        .json({ success: false, message: "Type not found" });
-    }
-
-    // Fetch custom strengths created by the user
-    const customStrengths = await StrengthCardModel.find({
-      createdByEmail: userEmail,
+    // Fetch strengths of the given type and custom strengths created by the user
+    const strengths = await StrengthCardModel.find({
+      $or: [{ type }, { createdByEmail: userEmail, type }],
     });
-    strengths = strengths.concat(customStrengths);
 
     res.json({
       success: true,

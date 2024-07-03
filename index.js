@@ -6,11 +6,20 @@ const userRoutes = require("./routes/users");
 const strengthRoutes = require("./routes/strengths");
 const solutionRoutes = require("./routes/solutions");
 const loginRouter = require("./routes/auth");
+const questionRoutes = require("./routes/questions");
+const actionsRoutes = require("./routes/actions");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(strengthRoutes, userRoutes, loginRouter,solutionRoutes);
+app.use(
+  strengthRoutes,
+  userRoutes,
+  loginRouter,
+  solutionRoutes,
+  questionRoutes,
+  actionsRoutes
+);
 
 const PORT = process.env.PORT;
 const MONGODB_URI = process.env.DATABASE_URL;

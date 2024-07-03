@@ -7,7 +7,7 @@ const StrengthCardSchema = new mongoose.Schema({
   },
   language: {
     type: String,
-    default:"english"
+    default: "english",
   },
   createdByEmail: {
     type: String,
@@ -17,13 +17,17 @@ const StrengthCardSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
- additionalText:{
-  type:String,
-  default:"",
- },
+  additionalText: {
+    type: String,
+    default: "",
+  },
   type: {
     type: String,
-    default: "custom",
+    required: true,
+  },
+  custom: {
+    type: Boolean,
+    default: false,
   },
 });
 

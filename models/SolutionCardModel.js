@@ -2,20 +2,20 @@ const mongoose = require("mongoose");
 
 const SolutionCardSchema = new mongoose.Schema({
   title: {
-        type: String,
-        required: true,
-      },
+    type: String,
+    required: true,
+  },
   description: {
     type: String,
     required: true,
   },
   language: {
     type: String,
-    default: "english"
+    default: "english",
   },
-  custom:{
+  custom: {
     type: Boolean,
-    default: false
+    default: false,
   },
   createdByEmail: {
     type: String,
@@ -25,14 +25,14 @@ const SolutionCardSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  urlForLiterature:{
-  type: String,
-  required: true,
- },
- urlForTedTalk:{
+  urlForLiterature: {
     type: String,
-    required: true
- },
+    default: "",
+  },
+  urlForTedTalk: {
+    type: String,
+    default: "",
+  },
   type: {
     type: String,
     required: true,
