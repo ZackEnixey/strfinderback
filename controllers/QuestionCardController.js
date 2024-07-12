@@ -63,8 +63,45 @@ const getQuestions = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+const updateQuestion = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { description, title, additionalText } = req.body;
+
+    const updatedCard = await QuestionModel.findByIdAndUpdate(
+      id,
+      {
+        description,
+        title,
+        additionalText,
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedCard) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Question Card not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Question Card updated successfully",
+      data: updatedCard,
+    });
+  } catch (error) {
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return res
+        .status(400)
+        .json({ success: false, message: messages.join(", ") });
+    }
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
 
 module.exports = {
   addQuestion,
   getQuestions,
+  updateQuestion,
 };

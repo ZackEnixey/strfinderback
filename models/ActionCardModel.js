@@ -15,7 +15,7 @@ const ActionCardSchema = new mongoose.Schema({
   },
   language: {
     type: String,
-    default: "english",
+    default: "English",
   },
   custom: {
     type: Boolean,

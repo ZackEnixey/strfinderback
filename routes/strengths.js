@@ -14,5 +14,10 @@ router.get(
   authMiddleware,
   strengthCardController.getStrengths
 );
+router.put(
+  "/strength-cards/:id",
+  authMiddleware,
+  strengthCardController.updateStrengthCard
+);
 
 module.exports = router;
