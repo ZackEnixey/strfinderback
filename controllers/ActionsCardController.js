@@ -36,7 +36,7 @@ const addAction = async (req, res) => {
 const getActions = async (req, res) => {
   try {
     const userId = req.params.id;
-    const language = req.query.language || "english";
+    const language = req.query.language || "English";
 
     // Fetch the user email by user ID
     const user = await UserModel.findById(userId);
@@ -63,8 +63,47 @@ const getActions = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+const updateAction = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { description, title, additionalText, numberOfUpperTokens } =
+      req.body;
+
+    const updatedCard = await ActionModel.findByIdAndUpdate(
+      id,
+      {
+        description,
+        title,
+        additionalText,
+        numberOfUpperTokens,
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedCard) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Action Card not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Action Card updated successfully",
+      data: updatedCard,
+    });
+  } catch (error) {
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return res
+        .status(400)
+        .json({ success: false, message: messages.join(", ") });
+    }
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
 
 module.exports = {
   addAction,
   getActions,
+  updateAction,
 };

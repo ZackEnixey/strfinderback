@@ -8,6 +8,7 @@ const solutionRoutes = require("./routes/solutions");
 const loginRouter = require("./routes/auth");
 const questionRoutes = require("./routes/questions");
 const actionsRoutes = require("./routes/actions");
+const gameTemplateRoutes = require("./routes/gameTemplate");
 
 const app = express();
 app.use(cors());
@@ -18,7 +19,8 @@ app.use(
   loginRouter,
   solutionRoutes,
   questionRoutes,
-  actionsRoutes
+  actionsRoutes,
+  gameTemplateRoutes
 );
 
 const PORT = process.env.PORT;

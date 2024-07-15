@@ -10,5 +10,10 @@ router.get(
   authMiddleware,
   questionsController.getQuestions
 );
+router.put(
+  "/question-cards/:id",
+  authMiddleware,
+  questionsController.updateQuestion
+);
 
 module.exports = router;

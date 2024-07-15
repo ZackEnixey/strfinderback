@@ -44,7 +44,7 @@ const addSolutionCard = async (req, res) => {
 const getSolutions = async (req, res) => {
   try {
     const userId = req.params.id;
-    const language = req.query.language || "english";
+    const language = req.query.language || "English";
 
     // Fetch the user email by user ID
     const user = await UserModel.findById(userId);
@@ -80,7 +80,7 @@ const getSolutions = async (req, res) => {
             case "Physical":
               categorizedSolutions.Physical.push(solution);
               break;
-            case "Relations":
+            case "Relational":
               categorizedSolutions.Relations.push(solution);
               break;
             default:
@@ -99,7 +99,7 @@ const getSolutions = async (req, res) => {
           case "Physical":
             categorizedSolutions.Physical.push(solution);
             break;
-          case "Relations":
+          case "Relational":
             categorizedSolutions.Relations.push(solution);
             break;
           default:
@@ -116,8 +116,53 @@ const getSolutions = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+const updateSolutionCard = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      description,
+      title,
+      additionalText,
+      urlForLiterature,
+      urlForTedTalk,
+    } = req.body;
+
+    const solutionCard = await SolutionCardModel.findByIdAndUpdate(
+      id,
+      {
+        description,
+        title,
+        info: additionalText,
+        urlForLiterature,
+        urlForTedTalk,
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!solutionCard) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Solution Card not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Solution Card updated successfully",
+      data: solutionCard,
+    });
+  } catch (error) {
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return res
+        .status(400)
+        .json({ success: false, message: messages.join(", ") });
+    }
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
 
 module.exports = {
   addSolutionCard,
   getSolutions,
+  updateSolutionCard,
 };

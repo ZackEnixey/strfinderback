@@ -14,5 +14,10 @@ router.get(
   authMiddleware,
   solutionCardController.getSolutions
 );
+router.put(
+  "/solution-cards/:id",
+  authMiddleware,
+  solutionCardController.updateSolutionCard
+);
 
 module.exports = router;
