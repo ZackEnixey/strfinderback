@@ -21,6 +21,7 @@ const login = async (req, res) => {
         .status(401)
         .json({ success: false, message: "Invalid email or password" });
     }
+
     // If email and password are correct, create and return an access token
     const accessToken = jwt.sign(
       { userId: user._id, email: user.email },
@@ -29,8 +30,10 @@ const login = async (req, res) => {
         expiresIn: "7d",
       }
     );
+
     res.status(200).json({ success: true, accessToken });
   } catch (error) {
+    console.error("Login error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
