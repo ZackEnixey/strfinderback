@@ -15,5 +15,11 @@ router.put(
   authMiddleware,
   questionsController.updateQuestion
 );
+// Fetch multiple questions by IDs
+router.post(
+  "/get-questions",
+  authMiddleware,
+  questionsController.getQuestionsByIds
+);
 
 module.exports = router;

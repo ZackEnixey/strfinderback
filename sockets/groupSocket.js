@@ -23,12 +23,11 @@ module.exports = (io) => {
       try {
         // Find all groups with the given gameCode
         const groups = await Group.find({ gameCode }).sort("groupCode");
-
         let group;
         for (let g of groups) {
           if (g.players.find((p) => p.email === player.email)) {
             // Player is already in this group
-            socket.join(g.groupCode); // Ensure the player is in the correct room
+            socket.join(g.groupCode);
             io.to(g.groupCode).emit("playerJoined", {
               player,
               groupCode: g.groupCode,
@@ -79,6 +78,8 @@ module.exports = (io) => {
       }
     });
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     socket.on("updateGroup", async ({ player, targetGroupCode }) => {
       try {
         const targetGroup = await Group.findOne({ groupCode: targetGroupCode });
@@ -112,7 +113,6 @@ module.exports = (io) => {
           });
         }
 
-        // Add player to the target group
         targetGroup.players.push(player);
         playersInGroups[player.nickName] = targetGroup.groupCode;
         socket.join(targetGroup.groupCode);
@@ -125,7 +125,6 @@ module.exports = (io) => {
         console.log(
           `Player ${player.nickName} moved to group ${targetGroup.groupCode}`
         );
-        // Update all clients with the new group data
         io.emit(
           "groupsData",
           await Group.find({ gameCode: targetGroup.gameCode })
@@ -143,6 +142,79 @@ module.exports = (io) => {
         console.error("Error marking player as ready:", error);
       }
     });
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    socket.on("dilemmaSelection", async ({ item, type, groupCode }) => {
+      try {
+        const game = await Game.findOne({ groupCode });
+        if (!game) {
+          socket.emit("error", { message: "Game not found" });
+          return;
+        }
+
+        if (type === "question") {
+          game.currentlySelectedQuestion = item;
+        } else {
+          game.currentlySelectedAction = item;
+        }
+        game.phase += 1;
+        await game.save();
+
+        io.to(groupCode).emit("itemSelected");
+      } catch (error) {
+        console.error("Error selecting item:", error);
+        socket.emit("error", { message: "Error selecting item" });
+      }
+    });
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    socket.on(
+      "solutionSelected",
+      async ({ solutionTitle, solutionDescription, groupCode, playerName }) => {
+        try {
+          const game = await Game.findOne({ groupCode });
+          if (!game) {
+            socket.emit("error", { message: "Game not found" });
+            return;
+          }
+
+          game.currentlyProposedSolutions.push({
+            solutionTitle,
+            solutionDescription,
+            playerName,
+          });
+
+          await game.save();
+          // Emit the new solution to all clients in the group
+          io.emit("updateProposedSolutions", solutionTitle);
+        } catch (error) {
+          console.error("Error selecting solution:", error);
+          socket.emit("error", { message: "Error selecting solution" });
+        }
+      }
+    );
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    socket.on("getInitialProposedSolutions", async ({ groupCode }) => {
+      try {
+        const game = await Game.findOne({ groupCode });
+        if (!game) {
+          socket.emit("error", { message: "Game not found" });
+          return;
+        }
+
+        const proposedSolutions = game.currentlyProposedSolutions;
+
+        io.emit("initialProposedSolutions", proposedSolutions);
+      } catch (error) {
+        console.error("Error fetching initial proposed solutions:", error);
+        socket.emit("error", { message: "Error fetching proposed solutions" });
+      }
+    });
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     socket.on("disconnect", async () => {
       console.log("Group socket disconnected");
@@ -181,13 +253,11 @@ module.exports = (io) => {
 
       const gameCode = group.gameCode;
       io.to(groupCode).emit("startGame", { groupCode });
-      console.log("game socket called");
-
+      const gameTemplate = await GameTemplate.findOne({
+        gameTemplateId: gameCode,
+      });
       let game = await Game.findOne({ groupCode });
       if (!game) {
-        const gameTemplate = await GameTemplate.findOne({
-          gameTemplateId: gameCode,
-        });
         if (!gameTemplate) {
           console.error(
             "Game template not found with provided code:",
@@ -195,17 +265,20 @@ module.exports = (io) => {
           );
           return;
         }
-
         game = new Game({
           gameTemplate: gameTemplate._id,
           groupCode: groupCode,
           players: [],
           phase: 0,
+          dilemmaOwner: playerId,
         });
 
         await game.save();
       }
-
+      // check if the player is the Dilemma owner
+      const isDilemmaOwner = game.dilemmaOwner === playerId;
+      io.to(groupCode).emit("gameTemplate", gameTemplate);
+      io.to(groupCode).emit("isDilemmaOwner", isDilemmaOwner);
       const player = await Player.findById(playerId);
       if (!player) {
         console.error("Player not found with provided id:", playerId);
@@ -216,7 +289,8 @@ module.exports = (io) => {
 
       await game.save();
 
-      io.to(game._id).emit("updateGame", game);
+      io.to(groupCode).emit("updateGame", game);
+
       console.log(
         `Player ${playerId} joined group ${groupCode} in game ${gameCode}`
       );

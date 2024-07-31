@@ -47,7 +47,7 @@ const getActions = async (req, res) => {
     }
     const userEmail = user.email;
 
-    // Fetch actions filtered by language, either custom questions created by the user or default questions
+    // Fetch actions filtered by language, either custom actions created by the user or default actions
     const actions = await ActionModel.find({
       $or: [
         { createdByEmail: userEmail, language },
@@ -101,9 +101,33 @@ const updateAction = async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+const getActionsByIds = async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    // Validate the input
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid input: 'ids' should be a non-empty array",
+      });
+    }
+
+    // Fetch actions by IDs
+    const actions = await ActionModel.find({ _id: { $in: ids } });
+
+    res.json({
+      success: true,
+      data: actions,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 module.exports = {
   addAction,
   getActions,
   updateAction,
+  getActionsByIds,
 };

@@ -99,9 +99,34 @@ const updateQuestion = async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+// Fetch multiple questions by IDs
+const getQuestionsByIds = async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    // Validate the input
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid input: 'ids' should be a non-empty array",
+      });
+    }
+
+    // Fetch questions by IDs
+    const questions = await QuestionModel.find({ _id: { $in: ids } });
+
+    res.json({
+      success: true,
+      data: questions,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 module.exports = {
   addQuestion,
   getQuestions,
   updateQuestion,
+  getQuestionsByIds,
 };

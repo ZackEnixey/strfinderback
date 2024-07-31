@@ -116,6 +116,48 @@ const getSolutions = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+const getSolutionsByIds = async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    // Fetch solutions by array of IDs
+    const solutions = await SolutionCardModel.find({ _id: { $in: ids } });
+
+    const categorizedSolutions = {
+      Emotional: [],
+      Mental: [],
+      Physical: [],
+      Relations: [],
+    };
+
+    // Categorize solutions by type
+    solutions.forEach((solution) => {
+      switch (solution.type) {
+        case "Emotional":
+          categorizedSolutions.Emotional.push(solution);
+          break;
+        case "Mental":
+          categorizedSolutions.Mental.push(solution);
+          break;
+        case "Physical":
+          categorizedSolutions.Physical.push(solution);
+          break;
+        case "Relational":
+          categorizedSolutions.Relations.push(solution);
+          break;
+        default:
+          break;
+      }
+    });
+
+    res.json({
+      success: true,
+      data: categorizedSolutions,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 const updateSolutionCard = async (req, res) => {
   try {
     const { id } = req.params;
@@ -164,5 +206,6 @@ const updateSolutionCard = async (req, res) => {
 module.exports = {
   addSolutionCard,
   getSolutions,
+  getSolutionsByIds,
   updateSolutionCard,
 };
