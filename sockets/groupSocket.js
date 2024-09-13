@@ -161,7 +161,7 @@ module.exports = (io) => {
         game.phase += 1;
         await game.save();
 
-        io.to(groupCode).emit("itemSelected");
+        io.to(groupCode).emit("itemSelected", item);
       } catch (error) {
         console.error("Error selecting item:", error);
         socket.emit("error", { message: "Error selecting item" });
@@ -172,7 +172,13 @@ module.exports = (io) => {
 
     socket.on(
       "solutionSelected",
-      async ({ solutionTitle, solutionDescription, groupCode, playerName }) => {
+      async ({
+        solutionTitle,
+        solutionDescription,
+        solutionId,
+        groupCode,
+        playerName,
+      }) => {
         try {
           const game = await Game.findOne({ groupCode });
           if (!game) {
@@ -183,6 +189,7 @@ module.exports = (io) => {
           game.currentlyProposedSolutions.push({
             solutionTitle,
             solutionDescription,
+            solutionId,
             playerName,
           });
 
@@ -213,6 +220,84 @@ module.exports = (io) => {
         socket.emit("error", { message: "Error fetching proposed solutions" });
       }
     });
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    socket.on(
+      "likeSolution",
+      async ({ solutionTitle, playerName, groupCode }) => {
+        try {
+          const game = await Game.findOne({ groupCode });
+          if (!game) {
+            socket.emit("error", { message: "Game not found" });
+            return;
+          }
+
+          const proposedSolutions = game.currentlyProposedSolutions;
+
+          // Find the solution with the matching title and playerName
+          const solution = proposedSolutions.find(
+            (solution) =>
+              solution.solutionTitle === solutionTitle &&
+              solution.playerName === playerName
+          );
+
+          if (solution) {
+            // Increment the likes
+            solution.likes = solution.likes + 1;
+
+            // Save the updated game document
+            await game.save();
+
+            // Emit the updated solution to all clients
+            io.emit("solutionLiked", {
+              solutionTitle,
+              playerName,
+              likes: solution.likes,
+            });
+          } else {
+            socket.emit("error", { message: "Solution not found" });
+          }
+        } catch (error) {
+          console.error(
+            "Error fetching or updating proposed solutions:",
+            error
+          );
+          socket.emit("error", {
+            message: "Error fetching or updating proposed solutions",
+          });
+        }
+      }
+    );
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    socket.on(
+      "chosenSolution",
+      async ({ solutionId, playerName, groupCode }) => {
+        try {
+          const game = await Game.findOne({ groupCode });
+          if (!game) {
+            socket.emit("error", { message: "Game not found" });
+            return;
+          }
+
+          // Update the chosen solution in the game
+          game.chosenSolution = {
+            solution: solutionId,
+            playerName,
+          };
+
+          await game.save();
+
+          // Emit the updated chosen solution to all clients in the group
+          io.emit("chosenSolution", game.chosenSolution);
+        } catch (error) {
+          console.error("Error selecting solution:", error);
+          socket.emit("error", { message: "Error selecting solution" });
+        }
+      }
+    );
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -275,17 +360,27 @@ module.exports = (io) => {
 
         await game.save();
       }
-      // check if the player is the Dilemma owner
-      const isDilemmaOwner = game.dilemmaOwner === playerId;
       io.to(groupCode).emit("gameTemplate", gameTemplate);
-      io.to(groupCode).emit("isDilemmaOwner", isDilemmaOwner);
+      io.to(groupCode).emit("DilemmaOwner", game.dilemmaOwner);
       const player = await Player.findById(playerId);
       if (!player) {
         console.error("Player not found with provided id:", playerId);
         return;
       }
+      // Check if the player is already in the game
+      const playerExists = game.players.some((p) => p._id.equals(player._id));
 
-      game.players.push(player);
+      if (!playerExists) {
+        game.players.push(player);
+        await game.save();
+        io.to(groupCode).emit("updateGame", game);
+
+        console.log(
+          `Player ${playerId} joined group ${groupCode} in game ${gameCode}`
+        );
+      } else {
+        console.log(`Player ${playerId} is already in the game.`);
+      }
 
       await game.save();
 

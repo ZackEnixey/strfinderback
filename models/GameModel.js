@@ -24,13 +24,14 @@ const gameSchema = new Schema({
   },
   proposedStrength: { type: Schema.Types.ObjectId, ref: "strengthcards" },
   chosenSolution: {
-    solution: { type: Schema.Types.ObjectId, ref: "solutioncards" },
-    playerId: { type: String, default: null },
+    solution: { type: String, default: null },
+    playerName: { type: String, default: null },
   },
   currentlyProposedSolutions: [
     {
       solutionTitle: { type: String, default: "" },
       solutionDescription: { type: String, default: "" },
+      solutionId: { type: String, default: "" },
       likes: { type: Number, default: 0 },
       playerName: { type: String, default: null },
     },
